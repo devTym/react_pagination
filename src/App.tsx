@@ -1,35 +1,43 @@
-import React, { useState } from 'react';
+import React from 'react';
 import './App.css';
 import { getNumbers } from './utils';
 import { Pagination } from './components/Pagination';
+import { useSearchParams } from 'react-router-dom';
 
 const items = getNumbers(1, 42).map(n => `Item ${n}`);
 const ITEMS_PER_PAGE_OPTIONS = [3, 5, 10, 20];
 
 export const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const currentPage = Number(searchParams.get('page')) || 1;
+  const rawPerPage = Number(searchParams.get('perPage')) || 5;
+
+  const itemsPerPage = ITEMS_PER_PAGE_OPTIONS.includes(rawPerPage)
+    ? rawPerPage
+    : 5;
 
   const itemsCount = items.length;
-  const pagesCount = Math.ceil(itemsCount / itemsPerPage);
 
-  const handlePerPageSelector = (
-    event: React.ChangeEvent<HTMLSelectElement>,
-  ) => {
-    const value = Number(event.currentTarget.value);
+  const handlePerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const perPage = Number(e.currentTarget.value);
 
-    if (ITEMS_PER_PAGE_OPTIONS.includes(value)) {
-      setCurrentPage(1);
-      setItemsPerPage(value);
+    if (ITEMS_PER_PAGE_OPTIONS.includes(perPage)) {
+      const params = new URLSearchParams(searchParams);
+
+      params.set('perPage', String(perPage));
+      params.set('page', '1');
+
+      setSearchParams(params);
     }
   };
 
   const handlePageChange = (page: number) => {
-    if (page > 0 && page <= pagesCount) {
-      setCurrentPage(page);
-    } else {
-      setCurrentPage(page > pagesCount ? pagesCount : 1);
-    }
+    const params = new URLSearchParams(searchParams);
+
+    params.set('page', String(page));
+
+    setSearchParams(params);
   };
 
   const itemsStartPosition = (currentPage - 1) * itemsPerPage;
@@ -57,7 +65,7 @@ export const App: React.FC = () => {
             id="perPageSelector"
             className="form-control"
             value={itemsPerPage}
-            onChange={handlePerPageSelector}
+            onChange={handlePerPageChange}
           >
             {ITEMS_PER_PAGE_OPTIONS.map(option => (
               <option key={option} value={option}>
